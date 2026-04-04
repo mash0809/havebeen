@@ -9,7 +9,7 @@ import java.time.LocalDate
 @RestController
 @RequestMapping("/api/simulation")
 class SimulationController(
-    private val simulationService: SimulationService
+    private val simulationService: SimulationService,
 ) {
 
     @GetMapping
@@ -17,7 +17,7 @@ class SimulationController(
         @RequestParam symbol: String,
         @RequestParam dailyAmount: Long,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) startDate: LocalDate,
-        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) endDate: LocalDate
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) endDate: LocalDate,
     ): SimulationResult {
         validate(symbol, dailyAmount, startDate, endDate)
         return simulationService.simulate(symbol, dailyAmount, startDate, endDate)

@@ -9,14 +9,14 @@ import java.time.LocalDate
 
 @Service
 class SimulationService(
-    private val yahooFinanceClient: YahooFinanceClient
+    private val yahooFinanceClient: YahooFinanceClient,
 ) {
 
     fun simulate(
         symbol: String,
         dailyAmount: Long,
         startDate: LocalDate,
-        endDate: LocalDate
+        endDate: LocalDate,
     ): SimulationResult {
         val prices = yahooFinanceClient.fetchPrices(symbol, startDate, endDate)
         if (prices.isEmpty()) {
@@ -55,7 +55,7 @@ class SimulationService(
             returnRate = returnRate.toBigDecimal().setScale(2, RoundingMode.HALF_UP).toDouble(),
             grade = resolveGrade(returnRate),
             analogyText = resolveAnalogy(currentValue),
-            chartData = chartData
+            chartData = chartData,
         )
     }
 

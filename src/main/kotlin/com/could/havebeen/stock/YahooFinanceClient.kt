@@ -26,7 +26,7 @@ class YahooFinanceClient {
         val response = try {
             restClient.get()
                 .uri("/v8/finance/chart/{symbol}?interval=1d&period1={p1}&period2={p2}",
-                    symbol, period1, period2)
+                    symbol, period1, period2,)
                 .retrieve()
                 .body(JsonNode::class.java)
         } catch (e: RestClientException) {

@@ -5,5 +5,5 @@ import java.time.LocalDate
 
 data class StockPrice(
     val date: LocalDate,
-    val closePrice: BigDecimal
+    val closePrice: BigDecimal,
 )

@@ -69,7 +69,7 @@ class SimulationServiceTest {
         "130, 아기 껄무새",
         "250, 껄무새",
         "400, 대왕 껄무새",
-        "800, 황금 껄무새"
+        "800, 황금 껄무새",
     )
     fun `등급 경계값이 정확해야 한다`(finalPrice: Long, expectedGrade: String) {
         // [100 → finalPrice] 2일 시나리오

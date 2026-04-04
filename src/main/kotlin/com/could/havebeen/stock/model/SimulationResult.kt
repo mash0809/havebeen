@@ -12,10 +12,10 @@ data class SimulationResult(
     val returnRate: Double,
     val grade: String,
     val analogyText: String,
-    val chartData: List<ChartPoint>
+    val chartData: List<ChartPoint>,
 )
 
 data class ChartPoint(
     val date: LocalDate,
-    val value: Long
+    val value: Long,
 )
