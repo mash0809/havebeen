@@ -11,11 +11,15 @@ interface SimulationFormProps {
 
 function getDefaultDates(): { startDate: string; endDate: string } {
   const today = new Date();
-  const endDate = today.toISOString().split("T")[0];
+  // toISOString()은 UTC 기준이므로 한국 시간대에서 어제 날짜가 나올 수 있다.
+  // 로컬 날짜를 직접 포맷해서 타임존 버그를 방지한다.
+  const formatDate = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
+  const endDate = formatDate(today);
   const oneYearAgo = new Date(today);
   oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-  const startDate = oneYearAgo.toISOString().split("T")[0];
+  const startDate = formatDate(oneYearAgo);
 
   return { startDate, endDate };
 }
@@ -42,7 +46,10 @@ export default function SimulationForm({
       ? customSymbol.trim()
       : STOCK_PRESETS[selectedPresetIndex].symbol;
 
-    if (!symbol) return;
+    if (!symbol) {
+      setFormError("종목 코드를 입력해주세요.");
+      return;
+    }
 
     if (startDate >= endDate) {
       setFormError("시작일은 종료일보다 이전이어야 합니다.");

@@ -35,8 +35,8 @@ function tickFormatter(value: string, index: number, data: ChartPoint[]): string
 
 export default function SimulationChart({ result }: SimulationChartProps) {
   const isPositive = result.returnRate >= 0;
-  // 양수 수익률: rise(#EF4444 빨강), 음수: fall(#3B82F6 파랑)
-  const lineColor = isPositive ? "#EF4444" : "#3B82F6";
+  // globals.css @theme 변수를 참조해 테마 일관성 유지
+  const lineColor = isPositive ? "var(--color-rise)" : "var(--color-fall)";
 
   const { chartData } = result;
 
