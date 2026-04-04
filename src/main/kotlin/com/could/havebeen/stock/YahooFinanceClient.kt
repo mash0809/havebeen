@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientException
 import java.math.BigDecimal
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 
@@ -17,10 +18,13 @@ import java.time.ZoneOffset
  * 조회 결과는 Caffeine 캐시에 저장되어 동일 요청의 반복 호출을 방지한다.
  */
 @Component
-class YahooFinanceClient {
+class YahooFinanceClient(
+    // Spring Boot의 자동 구성된 RestClient.Builder를 주입받아 공통 설정(타임아웃 등)을 활용
+    builder: RestClient.Builder,
+) {
 
     // Yahoo Finance 비공개 API는 브라우저 User-Agent를 요구하므로 명시적으로 설정
-    private val restClient = RestClient.builder()
+    private val restClient = builder
         .baseUrl("https://query1.finance.yahoo.com")
         .defaultHeader("User-Agent", "Mozilla/5.0")
         .build()
@@ -62,12 +66,13 @@ class YahooFinanceClient {
         }
 
         // timestamps[i]와 closes[i]는 같은 날짜에 대응한다
-        // epoch 초를 epoch 일(day)로 변환: 86400 = 초/일
         return timestamps.mapIndexed { i, tsNode ->
             val closeNode = closes[i]
             // 거래 정지 등으로 종가가 없는 날은 null 반환 후 filterNotNull로 제거
             if (closeNode.isNull || closeNode.isMissingNode) return@mapIndexed null
-            val date = LocalDate.ofEpochDay(tsNode.asLong() / 86400)
+            val date = Instant.ofEpochSecond(tsNode.asLong())
+                .atZone(ZoneOffset.UTC)
+                .toLocalDate()
             StockPrice(date = date, closePrice = BigDecimal.valueOf(closeNode.asDouble()))
         }.filterNotNull()
     }

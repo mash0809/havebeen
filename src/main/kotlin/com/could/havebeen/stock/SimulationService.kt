@@ -17,7 +17,7 @@ class SimulationService(
      *
      * 매 거래일마다 [dailyAmount]원을 종가로 매수한다고 가정하고,
      * 기간 말 평가금액과 수익률을 계산한다.
-     * 종가가 0인 날(거래 정지 등)은 매수를 건너뛰되, 해당 날도 데이터 수(투자 일수)에는 포함된다.
+     * 종가가 0인 날(거래 정지 등)은 매수를 건너뛰며, 해당 날은 투자금에도 포함되지 않는다.
      */
     fun simulate(
         symbol: String,
@@ -32,6 +32,7 @@ class SimulationService(
 
         val daily = BigDecimal.valueOf(dailyAmount)
         var totalShares = BigDecimal.ZERO
+        var investedDays = 0L
         val chartData = mutableListOf<ChartPoint>()
 
         // 날짜 순으로 매수 시뮬레이션: 종가 0원인 날은 매수 불가로 skip
@@ -39,6 +40,7 @@ class SimulationService(
             if (stockPrice.closePrice > BigDecimal.ZERO) {
                 // 소수점 10자리까지 보존해 주식 수 계산 오차를 최소화
                 totalShares = totalShares.add(daily.divide(stockPrice.closePrice, 10, RoundingMode.HALF_UP))
+                investedDays++
             }
             // 해당 시점의 평가금액(보유 주식 수 × 당일 종가)을 차트 데이터로 누적
             val currentValue = totalShares.multiply(stockPrice.closePrice)
@@ -48,8 +50,8 @@ class SimulationService(
 
         val lastPrice = prices.last().closePrice
         val currentValue = totalShares.multiply(lastPrice).setScale(0, RoundingMode.HALF_UP).toLong()
-        // 총 투자금 = 일일 투자금 × 전체 거래일 수 (skip된 날 포함)
-        val totalInvested = daily.multiply(BigDecimal.valueOf(prices.size.toLong()))
+        // 총 투자금 = 일일 투자금 × 실제 매수일 수 (종가 0원으로 skip된 날 제외)
+        val totalInvested = daily.multiply(BigDecimal.valueOf(investedDays))
             .setScale(0, RoundingMode.HALF_UP).toLong()
 
         // 수익률(%) = (평가금액 - 투자금) / 투자금 × 100
@@ -88,13 +90,8 @@ class SimulationService(
      * 가장 저렴한 아이템(스타벅스 아메리카노)도 살 수 없을 경우 소수점 "잔" 단위로 표현한다.
      */
     private fun resolveAnalogy(currentValue: Long): String {
-        val items = listOf(
-            Pair("스타벅스 아메리카노", 5_500L),
-            Pair("아이폰 15 Pro", 1_550_000L),
-            Pair("MacBook Air M2", 1_590_000L),
-        )
         // 1개 이상 구매 가능한 아이템 중 구매 수량이 가장 많은 것을 선택
-        val best = items.maxByOrNull { (_, price) ->
+        val best = ANALOGY_ITEMS.maxByOrNull { (_, price) ->
             val count = currentValue.toDouble() / price.toDouble()
             if (count >= 1.0) count else 0.0
         }
@@ -104,7 +101,17 @@ class SimulationService(
             "${best.first} ${formatted}개"
         } else {
             // 아메리카노 1잔도 안 되는 경우: 소수점으로 몇 잔인지 표현
-            "${items.first().first} ${"%.1f".format(currentValue.toDouble() / items.first().second)}잔"
+            val cheapest = ANALOGY_ITEMS.first()
+            "${cheapest.first} ${"%.1f".format(currentValue.toDouble() / cheapest.second)}잔"
         }
+    }
+
+    companion object {
+        /** 평가금액 비유에 사용하는 소비재 목록 (이름, 가격 원) */
+        private val ANALOGY_ITEMS = listOf(
+            Pair("스타벅스 아메리카노", 5_500L),
+            Pair("아이폰 15 Pro", 1_550_000L),
+            Pair("MacBook Air M2", 1_590_000L),
+        )
     }
 }

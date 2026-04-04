@@ -94,8 +94,8 @@ class SimulationServiceTest {
 
         val result = service.simulate("TEST", 10_000L, start, end)
 
-        // 0원짜리 날은 skip → 2일치 투자금만
-        assertEquals(20_000L, result.totalInvested)
+        // 0원짜리 날은 skip → 실제 매수일(1일)치 투자금만
+        assertEquals(10_000L, result.totalInvested)
     }
 
     @Test
