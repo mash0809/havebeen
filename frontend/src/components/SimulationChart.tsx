@@ -45,7 +45,7 @@ export default function SimulationChart({ result }: SimulationChartProps) {
       className="w-full max-w-lg mx-auto p-6 rounded-2xl"
       style={{ backgroundColor: "#16213e" }}
     >
-      <p className="text-sm font-semibold mb-4" style={{ color: "#d4af37" }}>
+      <p className="text-sm font-semibold mb-4 text-gold">
         투자 평가금액 추이
       </p>
       <ResponsiveContainer width="100%" height={240}>

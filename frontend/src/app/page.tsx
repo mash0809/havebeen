@@ -31,12 +31,11 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen px-4 py-10" style={{ backgroundColor: "#1a1a2e" }}>
+    <main className="min-h-screen px-4 py-10 bg-charcoal">
       {/* 헤더 */}
       <div className="text-center mb-10">
         <h1
-          className="text-4xl font-bold tracking-tight mb-2"
-          style={{ color: "#d4af37" }}
+          className="text-4xl font-bold tracking-tight mb-2 text-gold"
         >
           껄무새 계산기
         </h1>
@@ -51,8 +50,9 @@ export default function Home() {
       {/* 에러 메시지 */}
       {error && (
         <div
-          className="w-full max-w-lg mx-auto mt-4 p-4 rounded-xl text-sm"
-          style={{ backgroundColor: "#2a1a1a", color: "#EF4444", border: "1px solid #EF4444" }}
+          role="alert"
+          className="w-full max-w-lg mx-auto mt-4 p-4 rounded-xl text-sm text-rise"
+          style={{ backgroundColor: "#2a1a1a", border: "1px solid #EF4444" }}
         >
           {error}
         </div>

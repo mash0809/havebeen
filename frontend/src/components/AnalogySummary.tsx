@@ -35,10 +35,7 @@ export default function AnalogySummary({ result }: AnalogySummaryProps) {
         <p className="text-sm mb-2" style={{ color: "#888" }}>
           그 돈으로 살 수 있었던 것
         </p>
-        <p
-          className="text-2xl font-bold leading-snug"
-          style={{ color: "#d4af37" }}
-        >
+        <p className="text-2xl font-bold leading-snug text-gold">
           {result.analogyText}
         </p>
       </div>

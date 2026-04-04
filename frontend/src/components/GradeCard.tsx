@@ -17,7 +17,7 @@ function formatKRW(value: number): string {
 
 export default function GradeCard({ result }: GradeCardProps) {
   const isPositive = result.returnRate >= 0;
-  const returnColor = isPositive ? "#EF4444" : "#3B82F6";
+  const returnColorClass = isPositive ? "text-rise" : "text-fall";
   const returnPrefix = isPositive ? "+" : "";
 
   return (
@@ -30,20 +30,14 @@ export default function GradeCard({ result }: GradeCardProps) {
         <p className="text-sm mb-1" style={{ color: "#888" }}>
           껄무새 등급
         </p>
-        <p
-          className="text-3xl font-bold"
-          style={{ color: "#d4af37" }}
-        >
+        <p className="text-3xl font-bold text-gold">
           {result.grade}
         </p>
       </div>
 
       {/* 수익률 */}
       <div className="text-center mb-6">
-        <p
-          className="text-5xl font-bold"
-          style={{ color: returnColor }}
-        >
+        <p className={`text-5xl font-bold ${returnColorClass}`}>
           {returnPrefix}{result.returnRate.toFixed(2)}%
         </p>
       </div>
@@ -69,10 +63,7 @@ export default function GradeCard({ result }: GradeCardProps) {
           <p className="text-xs mb-1" style={{ color: "#888" }}>
             평가금액
           </p>
-          <p
-            className="text-lg font-semibold"
-            style={{ color: returnColor }}
-          >
+          <p className={`text-lg font-semibold ${returnColorClass}`}>
             {formatKRW(result.currentValue)}
           </p>
         </div>

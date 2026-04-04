@@ -31,6 +31,7 @@ export default function SimulationForm({
   const [dailyAmount, setDailyAmount] = useState(10000);
   const [startDate, setStartDate] = useState(defaultStart);
   const [endDate, setEndDate] = useState(defaultEnd);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const isCustom = selectedPresetIndex === STOCK_PRESETS.length - 1;
 
@@ -42,6 +43,12 @@ export default function SimulationForm({
       : STOCK_PRESETS[selectedPresetIndex].symbol;
 
     if (!symbol) return;
+
+    if (startDate >= endDate) {
+      setFormError("시작일은 종료일보다 이전이어야 합니다.");
+      return;
+    }
+    setFormError(null);
 
     onSubmit({ symbol, dailyAmount, startDate, endDate });
   };
@@ -107,6 +114,7 @@ export default function SimulationForm({
       {/* 일일 투자금 */}
       <div className="mb-6">
         <label
+          htmlFor="dailyAmount"
           className="block text-sm font-semibold mb-2"
           style={{ color: "#d4af37" }}
         >
@@ -114,6 +122,7 @@ export default function SimulationForm({
         </label>
         <div className="relative">
           <input
+            id="dailyAmount"
             type="number"
             value={dailyAmount}
             onChange={(e) => setDailyAmount(Number(e.target.value))}
@@ -144,12 +153,14 @@ export default function SimulationForm({
       <div className="mb-6 flex gap-4">
         <div className="flex-1">
           <label
+            htmlFor="startDate"
             className="block text-sm font-semibold mb-2"
             style={{ color: "#d4af37" }}
           >
             시작일
           </label>
           <input
+            id="startDate"
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
@@ -165,12 +176,14 @@ export default function SimulationForm({
         </div>
         <div className="flex-1">
           <label
+            htmlFor="endDate"
             className="block text-sm font-semibold mb-2"
             style={{ color: "#d4af37" }}
           >
             종료일
           </label>
           <input
+            id="endDate"
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
@@ -185,6 +198,7 @@ export default function SimulationForm({
           />
         </div>
       </div>
+      {formError && <p className="text-rise text-sm mt-1">{formError}</p>}
 
       {/* 제출 버튼 */}
       <button
