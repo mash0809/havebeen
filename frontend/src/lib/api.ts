@@ -1,6 +1,7 @@
 import { SimulationRequest, SimulationResult } from "@/types/simulation";
 
-const BASE_URL = "http://localhost:8080";
+// 배포 환경에서는 NEXT_PUBLIC_API_BASE_URL 환경변수로 백엔드 주소를 지정한다
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
 export async function fetchSimulation(
   params: SimulationRequest,
