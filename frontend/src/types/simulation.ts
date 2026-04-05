@@ -22,3 +22,9 @@ export interface SimulationResult {
   analogyText: string;
   chartData: ChartPoint[];
 }
+
+export interface StockSearchResult {
+  symbol: string;
+  name: string;
+  exchange: string;
+}
