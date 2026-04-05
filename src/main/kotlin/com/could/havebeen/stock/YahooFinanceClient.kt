@@ -1,6 +1,7 @@
 package com.could.havebeen.stock
 
 import com.could.havebeen.stock.model.StockPrice
+import com.could.havebeen.stock.model.StockSearchResult
 import com.fasterxml.jackson.databind.JsonNode
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.Cacheable
@@ -82,6 +83,42 @@ class YahooFinanceClient(
         }.filterNotNull()
         log.debug("Yahoo Finance 응답 수신: symbol={}, 데이터 건수={}", symbol, prices.size)
         return prices
+    }
+
+    /**
+     * 종목 심볼/이름 검색 결과를 반환한다.
+     *
+     * Yahoo Finance Search API를 호출하며, 오류 발생 시 빈 목록을 반환한다.
+     * 검색 실패가 시뮬레이션 흐름을 막지 않도록 예외를 전파하지 않는다.
+     */
+    fun searchSymbols(query: String): List<StockSearchResult> {
+        log.debug("Yahoo Finance 종목 검색 호출: query={}", query)
+        val response = try {
+            restClient.get()
+                .uri(
+                    "/v1/finance/search?q={q}&quotesCount=8&newsCount=0&enableFuzzyQuery=false&lang=ko-KR",
+                    query,
+                )
+                .retrieve()
+                .body(JsonNode::class.java)
+        } catch (e: RestClientException) {
+            log.warn("Yahoo Finance 종목 검색 오류: query={}", query, e)
+            return emptyList()
+        } ?: return emptyList()
+
+        // 응답 구조: { quotes: [ { symbol, shortname, longname, exchange }, ... ] }
+        val quotes = response.path("quotes")
+        if (quotes.isMissingNode || quotes.isNull) return emptyList()
+
+        return quotes.mapNotNull { node ->
+            val symbol = node.path("symbol").asText(null) ?: return@mapNotNull null
+            // shortname이 없으면 longname으로 대체
+            val name = node.path("shortname").asText(null)
+                ?: node.path("longname").asText(null)
+                ?: return@mapNotNull null
+            val exchange = node.path("exchange").asText("")
+            StockSearchResult(symbol = symbol, name = name, exchange = exchange)
+        }
     }
 }
 
