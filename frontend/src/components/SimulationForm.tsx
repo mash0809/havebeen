@@ -141,7 +141,7 @@ export default function SimulationForm({
     <form
       onSubmit={handleSubmit}
       className="w-full max-w-lg mx-auto p-6 rounded-2xl"
-      style={{ backgroundColor: "#1a2540" }}
+      style={{ backgroundColor: "#1e2a48" }}
     >
       {/* 종목 선택 */}
       <div className="mb-6">
