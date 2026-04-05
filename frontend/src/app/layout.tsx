@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "HaveBeen - 투자 시뮬레이터",
+  title: "껄무새 - 그때살껄",
   description: "과거 투자 시뮬레이션 서비스",
 };
 
