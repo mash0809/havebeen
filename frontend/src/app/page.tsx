@@ -94,10 +94,10 @@ function HomeContent() {
       {/* 헤더 */}
       <div className="text-center mb-10">
         <h1 className="text-4xl font-bold tracking-tight mb-2 text-gold">
-          껄무새 계산기
+          껄무새 - 그때 살걸..
         </h1>
         <p className="text-sm" style={{ color: "#888" }}>
-          &ldquo;그때 살걸&rdquo; — 과거 적립식 투자 시뮬레이터
+          그때 살걸.. — 하루 이만큼씩 투자했더라면?
         </p>
       </div>
 
@@ -123,7 +123,7 @@ function HomeContent() {
       {!result && !isLoading && !error && (
         <div className="text-center mt-12">
           <p className="text-base" style={{ color: "#444" }}>
-            종목과 기간을 설정하고 시뮬레이션을 시작해보세요.
+            종목과 기간을 설정하고 본격적으로 후회해보세요.
           </p>
         </div>
       )}

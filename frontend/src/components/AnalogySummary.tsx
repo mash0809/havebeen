@@ -59,7 +59,7 @@ export default function AnalogySummary({ result }: AnalogySummaryProps) {
         <div className="w-px" style={{ backgroundColor: "#2a2a4e" }} />
         <div className="text-center">
           <p className="text-xs mb-1" style={{ color: "#888" }}>
-            일일 투자금
+            하루 이만큼만 투자했다면
           </p>
           <p className="text-base font-semibold" style={{ color: "#ffffff" }}>
             {result.dailyAmount.toLocaleString()}원

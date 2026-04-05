@@ -90,7 +90,7 @@ export default function SimulationForm({
           className="block text-sm font-semibold mb-3"
           style={{ color: "#d4af37" }}
         >
-          종목 선택
+          이 종목을
         </label>
         <div className="flex flex-wrap gap-2">
           {STOCK_PRESETS.map((preset, idx) => (
@@ -102,15 +102,15 @@ export default function SimulationForm({
               style={
                 selectedPresetIndex === idx
                   ? {
-                      backgroundColor: "#d4af37",
-                      color: "#1a1a2e",
-                      fontWeight: 700,
-                    }
+                    backgroundColor: "#d4af37",
+                    color: "#1a1a2e",
+                    fontWeight: 700,
+                  }
                   : {
-                      backgroundColor: "#0f3460",
-                      color: "#ffffff",
-                      border: "1px solid #2a2a4e",
-                    }
+                    backgroundColor: "#0f3460",
+                    color: "#ffffff",
+                    border: "1px solid #2a2a4e",
+                  }
               }
             >
               {preset.label}
@@ -143,7 +143,7 @@ export default function SimulationForm({
           className="block text-sm font-semibold mb-2"
           style={{ color: "#d4af37" }}
         >
-          일일 투자금
+          하루 이만큼만 투자했다면
         </label>
         <div className="relative">
           <input
@@ -182,7 +182,7 @@ export default function SimulationForm({
             className="block text-sm font-semibold mb-2"
             style={{ color: "#d4af37" }}
           >
-            시작일
+            이때부터
           </label>
           <input
             id="startDate"
@@ -205,7 +205,7 @@ export default function SimulationForm({
             className="block text-sm font-semibold mb-2"
             style={{ color: "#d4af37" }}
           >
-            종료일
+            이때까지..
           </label>
           <input
             id="endDate"
@@ -240,7 +240,7 @@ export default function SimulationForm({
           cursor: isLoading ? "not-allowed" : "pointer",
         }}
       >
-        {isLoading ? "시뮬레이션 중..." : "시뮬레이션 시작"}
+        {isLoading ? "후회 중..." : "후회 시작"}
       </button>
     </form>
   );
