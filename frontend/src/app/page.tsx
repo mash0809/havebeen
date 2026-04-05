@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import SimulationForm from "@/components/SimulationForm";
 import GradeCard from "@/components/GradeCard";
 import AnalogySummary from "@/components/AnalogySummary";
@@ -8,15 +9,46 @@ import SimulationChart from "@/components/SimulationChart";
 import { fetchSimulation } from "@/lib/api";
 import { SimulationRequest, SimulationResult } from "@/types/simulation";
 
-export default function Home() {
+/**
+ * URL query string에서 시뮬레이션 파라미터를 파싱한다.
+ * symbol, dailyAmount, startDate, endDate 모두 있어야 유효한 params로 반환.
+ */
+function parseSearchParams(
+  searchParams: ReturnType<typeof useSearchParams>,
+): SimulationRequest | undefined {
+  const symbol = searchParams.get("symbol");
+  const dailyAmountStr = searchParams.get("dailyAmount");
+  const startDate = searchParams.get("startDate");
+  const endDate = searchParams.get("endDate");
+
+  if (!symbol || !dailyAmountStr || !startDate || !endDate) return undefined;
+
+  const dailyAmount = Number(dailyAmountStr);
+  if (!Number.isFinite(dailyAmount) || dailyAmount <= 0) return undefined;
+
+  return { symbol, dailyAmount, startDate, endDate };
+}
+
+function HomeContent() {
+  const searchParams = useSearchParams();
+
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 링크 복사 버튼에서 현재 시뮬레이션 파라미터를 URL로 구성하기 위해 보관
+  const [lastParams, setLastParams] = useState<SimulationRequest | null>(null);
+  // 복사 성공 피드백 상태
+  const [copySuccess, setCopySuccess] = useState(false);
 
-  const handleSubmit = async (params: SimulationRequest) => {
+  // URL query string에서 초기 파라미터 파싱 (매 렌더링마다 새 객체 생성 방지)
+  const initialParams = useMemo(() => parseSearchParams(searchParams), [searchParams]);
+
+  const handleSubmit = useCallback(async (params: SimulationRequest) => {
     setIsLoading(true);
     setError(null);
     setResult(null);
+    // 링크 복사를 위해 마지막으로 실행된 파라미터 저장
+    setLastParams(params);
 
     try {
       const data = await fetchSimulation(params);
@@ -28,15 +60,40 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
+  }, []); // fetchSimulation은 모듈 수준 함수라 deps 없음
+
+  // URL query string에 유효한 파라미터가 있으면 자동 시뮬레이션 실행 (URL 변경 시도 재실행)
+  useEffect(() => {
+    if (initialParams) {
+      handleSubmit(initialParams);
+    }
+  }, [initialParams, handleSubmit]);
+
+  const handleCopyLink = async () => {
+    if (!lastParams) return;
+
+    const url = new URL(window.location.href);
+    url.search = ""; // 기존 쿼리 파라미터 초기화
+    url.searchParams.set("symbol", lastParams.symbol);
+    url.searchParams.set("dailyAmount", String(lastParams.dailyAmount));
+    url.searchParams.set("startDate", lastParams.startDate);
+    url.searchParams.set("endDate", lastParams.endDate);
+
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch {
+      // Clipboard API 미지원 환경: 사용자가 직접 복사할 수 있도록 URL 표시
+      window.prompt("아래 링크를 복사하세요:", url.toString());
+    }
   };
 
   return (
     <main className="min-h-screen px-4 py-10 bg-charcoal">
       {/* 헤더 */}
       <div className="text-center mb-10">
-        <h1
-          className="text-4xl font-bold tracking-tight mb-2 text-gold"
-        >
+        <h1 className="text-4xl font-bold tracking-tight mb-2 text-gold">
           껄무새 계산기
         </h1>
         <p className="text-sm" style={{ color: "#888" }}>
@@ -44,8 +101,12 @@ export default function Home() {
         </p>
       </div>
 
-      {/* 입력 폼 */}
-      <SimulationForm onSubmit={handleSubmit} isLoading={isLoading} />
+      {/* 입력 폼 — initialParams가 있으면 폼 초기값으로 주입 */}
+      <SimulationForm
+        onSubmit={handleSubmit}
+        isLoading={isLoading}
+        initialParams={initialParams}
+      />
 
       {/* 에러 메시지 */}
       {error && (
@@ -70,11 +131,36 @@ export default function Home() {
       {/* 결과 섹션 */}
       {result && (
         <div className="mt-8 flex flex-col gap-4">
+          {/* 링크 복사 버튼 — 현재 시뮬레이션 파라미터를 URL로 공유 */}
+          <div className="w-full max-w-lg mx-auto flex justify-end">
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+              style={{
+                backgroundColor: "#0f3460",
+                color: "#d4af37",
+                border: "1px solid #2a2a4e",
+              }}
+            >
+              {copySuccess ? "복사 완료!" : "링크 복사"}
+            </button>
+          </div>
           <GradeCard result={result} />
           <AnalogySummary result={result} />
           <SimulationChart result={result} />
         </div>
       )}
     </main>
+  );
+}
+
+// useSearchParams()는 Suspense boundary 없이 사용하면 Next.js 15에서 빌드 경고가 발생한다.
+// Home은 Suspense로 HomeContent를 감싸는 shell 역할만 한다.
+export default function Home() {
+  return (
+    <Suspense fallback={null}>
+      <HomeContent />
+    </Suspense>
   );
 }

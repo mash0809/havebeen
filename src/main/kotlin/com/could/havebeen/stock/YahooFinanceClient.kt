@@ -2,6 +2,7 @@ package com.could.havebeen.stock
 
 import com.could.havebeen.stock.model.StockPrice
 import com.fasterxml.jackson.databind.JsonNode
+import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
@@ -23,6 +24,8 @@ class YahooFinanceClient(
     builder: RestClient.Builder,
 ) {
 
+    private val log = LoggerFactory.getLogger(YahooFinanceClient::class.java)
+
     // Yahoo Finance 비공개 API는 브라우저 User-Agent를 요구하므로 명시적으로 설정
     private val restClient = builder
         .baseUrl("https://query1.finance.yahoo.com")
@@ -40,6 +43,7 @@ class YahooFinanceClient(
         // Yahoo Finance API는 기간을 Unix epoch 초(second) 단위로 받는다
         val period1 = startDate.atStartOfDay(ZoneOffset.UTC).toEpochSecond()
         val period2 = endDate.atStartOfDay(ZoneOffset.UTC).toEpochSecond()
+        log.debug("Yahoo Finance API 호출: symbol={}, period1={}, period2={}", symbol, period1, period2)
 
         val response = try {
             restClient.get()
@@ -48,7 +52,8 @@ class YahooFinanceClient(
                 .retrieve()
                 .body(JsonNode::class.java)
         } catch (e: RestClientException) {
-            throw StockNotFoundException("심볼 '$symbol'의 데이터를 Yahoo Finance에서 가져올 수 없습니다.")
+            log.error("Yahoo Finance API 오류: symbol={}", symbol, e)
+            throw StockNotFoundException("심볼 '$symbol'의 데이터를 Yahoo Finance에서 가져올 수 없습니다.", e)
         } ?: throw StockNotFoundException("심볼 '$symbol'에 대한 응답이 없습니다.")
 
         // 응답 구조: { chart: { result: [ { timestamp: [...], indicators: { quote: [{ close: [...] }] } } ] } }
@@ -66,7 +71,7 @@ class YahooFinanceClient(
         }
 
         // timestamps[i]와 closes[i]는 같은 날짜에 대응한다
-        return timestamps.mapIndexed { i, tsNode ->
+        val prices = timestamps.mapIndexed { i, tsNode ->
             val closeNode = closes[i]
             // 거래 정지 등으로 종가가 없는 날은 null 반환 후 filterNotNull로 제거
             if (closeNode.isNull || closeNode.isMissingNode) return@mapIndexed null
@@ -75,7 +80,9 @@ class YahooFinanceClient(
                 .toLocalDate()
             StockPrice(date = date, closePrice = BigDecimal.valueOf(closeNode.asDouble()))
         }.filterNotNull()
+        log.debug("Yahoo Finance 응답 수신: symbol={}, 데이터 건수={}", symbol, prices.size)
+        return prices
     }
 }
 
-class StockNotFoundException(message: String) : RuntimeException(message)
+class StockNotFoundException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)

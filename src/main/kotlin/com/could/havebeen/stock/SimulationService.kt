@@ -2,6 +2,7 @@ package com.could.havebeen.stock
 
 import com.could.havebeen.stock.model.ChartPoint
 import com.could.havebeen.stock.model.SimulationResult
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -11,6 +12,8 @@ import java.time.LocalDate
 class SimulationService(
     private val yahooFinanceClient: YahooFinanceClient,
 ) {
+
+    private val log = LoggerFactory.getLogger(SimulationService::class.java)
 
     /**
      * 적립식(DCA) 투자 시뮬레이션을 수행한다.
@@ -25,8 +28,10 @@ class SimulationService(
         startDate: LocalDate,
         endDate: LocalDate,
     ): SimulationResult {
+        log.info("시뮬레이션 요청: symbol={}, dailyAmount={}, period={} ~ {}", symbol, dailyAmount, startDate, endDate)
         val prices = yahooFinanceClient.fetchPrices(symbol, startDate, endDate)
         if (prices.isEmpty()) {
+            log.warn("주가 데이터 없음: symbol={}", symbol)
             throw StockNotFoundException("'$symbol'의 기간 내 주가 데이터가 없습니다.")
         }
 
@@ -59,7 +64,7 @@ class SimulationService(
             (currentValue - totalInvested).toDouble() / totalInvested.toDouble() * 100.0
         } else 0.0
 
-        return SimulationResult(
+        val result = SimulationResult(
             symbol = symbol,
             startDate = startDate,
             endDate = endDate,
@@ -71,6 +76,8 @@ class SimulationService(
             analogyText = resolveAnalogy(currentValue),
             chartData = chartData,
         )
+        log.info("시뮬레이션 완료: symbol={}, returnRate={}%, grade={}", symbol, result.returnRate, result.grade)
+        return result
     }
 
     /** 수익률에 따라 껄무새 등급을 반환한다. 300% 이상이 최고 등급, 음수이면 최하 등급. */

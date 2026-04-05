@@ -7,6 +7,8 @@ import { STOCK_PRESETS } from "@/lib/presets";
 interface SimulationFormProps {
   onSubmit: (params: SimulationRequest) => void;
   isLoading: boolean;
+  // URL query string 등으로 초기값을 주입할 때 사용
+  initialParams?: SimulationRequest;
 }
 
 function getDefaultDates(): { startDate: string; endDate: string } {
@@ -24,17 +26,33 @@ function getDefaultDates(): { startDate: string; endDate: string } {
   return { startDate, endDate };
 }
 
+/** initialParams의 symbol이 프리셋 목록과 일치하는지 찾아 index를 반환한다. */
+function resolvePresetIndex(symbol?: string): number {
+  if (!symbol) return 0;
+  const idx = STOCK_PRESETS.findIndex((p) => p.symbol === symbol);
+  // 일치하는 프리셋이 없으면 "직접 입력"(마지막 index)로 설정
+  return idx !== -1 ? idx : STOCK_PRESETS.length - 1;
+}
+
 export default function SimulationForm({
   onSubmit,
   isLoading,
+  initialParams,
 }: SimulationFormProps) {
   const { startDate: defaultStart, endDate: defaultEnd } = getDefaultDates();
 
-  const [selectedPresetIndex, setSelectedPresetIndex] = useState(0);
-  const [customSymbol, setCustomSymbol] = useState("");
-  const [dailyAmount, setDailyAmount] = useState(10000);
-  const [startDate, setStartDate] = useState(defaultStart);
-  const [endDate, setEndDate] = useState(defaultEnd);
+  const [selectedPresetIndex, setSelectedPresetIndex] = useState(
+    resolvePresetIndex(initialParams?.symbol),
+  );
+  const [customSymbol, setCustomSymbol] = useState(() => {
+    // initialParams.symbol이 있고 프리셋과 일치하지 않으면 직접 입력값으로 사용
+    if (!initialParams?.symbol) return "";
+    const idx = STOCK_PRESETS.findIndex((p) => p.symbol === initialParams.symbol);
+    return idx === -1 ? initialParams.symbol : "";
+  });
+  const [dailyAmount, setDailyAmount] = useState(initialParams?.dailyAmount ?? 10000);
+  const [startDate, setStartDate] = useState(initialParams?.startDate ?? defaultStart);
+  const [endDate, setEndDate] = useState(initialParams?.endDate ?? defaultEnd);
   const [formError, setFormError] = useState<string | null>(null);
 
   const isCustom = selectedPresetIndex === STOCK_PRESETS.length - 1;
@@ -205,7 +223,11 @@ export default function SimulationForm({
           />
         </div>
       </div>
-      {formError && <p className="text-rise text-sm mt-1">{formError}</p>}
+      {formError && (
+        <p role="alert" aria-live="polite" className="text-rise text-sm mt-1">
+          {formError}
+        </p>
+      )}
 
       {/* 제출 버튼 */}
       <button
