@@ -93,22 +93,19 @@ class SimulationService(
     /**
      * 평가금액을 일상 소비재에 빗대어 표현한다.
      *
-     * 1개 이상 살 수 있는 아이템 중 가장 많이 살 수 있는 것을 선택한다.
-     * 가장 저렴한 아이템(스타벅스 아메리카노)도 살 수 없을 경우 소수점 "잔" 단위로 표현한다.
+     * 1개 이상 살 수 있는 아이템 중 랜덤하게 하나를 선택한다.
+     * 가장 저렴한 아이템도 살 수 없을 경우 소수점 단위로 표현한다.
      */
     private fun resolveAnalogy(currentValue: Long): String {
-        // 1개 이상 구매 가능한 아이템 중 구매 수량이 가장 많은 것을 선택
-        val best = ANALOGY_ITEMS.maxByOrNull { (_, price) ->
-            val count = currentValue.toDouble() / price.toDouble()
-            if (count >= 1.0) count else 0.0
-        }
-        return if (best != null && currentValue >= best.second) {
-            val count = currentValue.toDouble() / best.second.toDouble()
-            val formatted = "%.1f".format(count)
-            "${best.first} ${formatted}개"
+        // 1개 이상 구매 가능한 아이템 중 랜덤 선택
+        val candidates = ANALOGY_ITEMS.filter { (_, price) -> currentValue >= price }
+        return if (candidates.isNotEmpty()) {
+            val selected = candidates.random()
+            val count = currentValue.toDouble() / selected.second.toDouble()
+            "${selected.first} ${"%.1f".format(count)}개"
         } else {
-            // 아메리카노 1잔도 안 되는 경우: 소수점으로 몇 잔인지 표현
-            val cheapest = ANALOGY_ITEMS.first()
+            // 아무것도 살 수 없을 경우: 가장 저렴한 아이템으로 소수점 표현
+            val cheapest = ANALOGY_ITEMS.minByOrNull { it.second }!!
             "${cheapest.first} ${"%.1f".format(currentValue.toDouble() / cheapest.second)}잔"
         }
     }
@@ -117,8 +114,18 @@ class SimulationService(
         /** 평가금액 비유에 사용하는 소비재 목록 (이름, 가격 원) */
         private val ANALOGY_ITEMS = listOf(
             Pair("스타벅스 아메리카노", 5_500L),
-            Pair("아이폰 15 Pro", 1_550_000L),
-            Pair("MacBook Air M2", 1_590_000L),
+            Pair("편의점 삼각김밥", 1_500L),
+            Pair("치킨 한 마리", 22_000L),
+            Pair("영화 티켓", 15_000L),
+            Pair("지하철 1회권", 1_500L),
+            Pair("아이폰 16 Pro", 1_650_000L),
+            Pair("MacBook Air M3", 1_690_000L),
+            Pair("갤럭시 S24", 1_155_000L),
+            Pair("나이키 에어맥스", 189_000L),
+            Pair("스타벅스 케이크 조각", 8_500L),
+            Pair("편의점 도시락", 4_500L),
+            Pair("롯데월드 자유이용권", 72_000L),
+            Pair("제주도 왕복 항공권", 120_000L),
         )
     }
 }
