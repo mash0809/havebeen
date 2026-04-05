@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import SimulationForm from "@/components/SimulationForm";
 import GradeCard from "@/components/GradeCard";
@@ -40,8 +40,8 @@ function HomeContent() {
   // 복사 성공 피드백 상태
   const [copySuccess, setCopySuccess] = useState(false);
 
-  // URL query string에서 초기 파라미터 파싱
-  const initialParams = parseSearchParams(searchParams);
+  // URL query string에서 초기 파라미터 파싱 (매 렌더링마다 새 객체 생성 방지)
+  const initialParams = useMemo(() => parseSearchParams(searchParams), [searchParams]);
 
   const handleSubmit = useCallback(async (params: SimulationRequest) => {
     setIsLoading(true);
@@ -62,12 +62,9 @@ function HomeContent() {
     }
   }, []); // fetchSimulation은 모듈 수준 함수라 deps 없음
 
-  const hasAutoRun = useRef(false);
-
-  // URL query string에 유효한 파라미터가 있으면 최초 1회 자동 시뮬레이션 실행
+  // URL query string에 유효한 파라미터가 있으면 자동 시뮬레이션 실행 (URL 변경 시도 재실행)
   useEffect(() => {
-    if (!hasAutoRun.current && initialParams) {
-      hasAutoRun.current = true;
+    if (initialParams) {
       handleSubmit(initialParams);
     }
   }, [initialParams, handleSubmit]);
@@ -75,7 +72,8 @@ function HomeContent() {
   const handleCopyLink = async () => {
     if (!lastParams) return;
 
-    const url = new URL(window.location.origin);
+    const url = new URL(window.location.href);
+    url.search = ""; // 기존 쿼리 파라미터 초기화
     url.searchParams.set("symbol", lastParams.symbol);
     url.searchParams.set("dailyAmount", String(lastParams.dailyAmount));
     url.searchParams.set("startDate", lastParams.startDate);
@@ -83,14 +81,12 @@ function HomeContent() {
 
     try {
       await navigator.clipboard.writeText(url.toString());
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
     } catch {
       // Clipboard API 미지원 환경: 사용자가 직접 복사할 수 있도록 URL 표시
       window.prompt("아래 링크를 복사하세요:", url.toString());
     }
-
-    // 복사 완료 피드백: 2초 후 원복
-    setCopySuccess(true);
-    setTimeout(() => setCopySuccess(false), 2000);
   };
 
   return (
