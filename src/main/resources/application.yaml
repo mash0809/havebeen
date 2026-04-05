@@ -4,8 +4,8 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/havebeen
-    username: admin
-    password: topsecret
+    username: ${DB_USERNAME:admin}
+    password: ${DB_PASSWORD:topsecret}
   cache:
     type: caffeine
     caffeine:
