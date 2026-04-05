@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { SimulationRequest } from "@/types/simulation";
+import { useState, useEffect, useRef } from "react";
+import { SimulationRequest, StockSearchResult } from "@/types/simulation";
 import { STOCK_PRESETS } from "@/lib/presets";
+import { searchStocks } from "@/lib/api";
 
 interface SimulationFormProps {
   onSubmit: (params: SimulationRequest) => void;
@@ -55,13 +56,71 @@ export default function SimulationForm({
   const [endDate, setEndDate] = useState(initialParams?.endDate ?? defaultEnd);
   const [formError, setFormError] = useState<string | null>(null);
 
+  // 검색 관련 state
+  const [searchQuery, setSearchQuery] = useState(() => {
+    // initialParams.symbol이 프리셋에 없으면 직접 입력 모드로 초기화
+    if (!initialParams?.symbol) return "";
+    const idx = STOCK_PRESETS.findIndex((p) => p.symbol === initialParams.symbol);
+    return idx === -1 ? initialParams.symbol : "";
+  });
+  const [searchResults, setSearchResults] = useState<StockSearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   const isCustom = selectedPresetIndex === STOCK_PRESETS.length - 1;
+
+  // debounce 검색: searchQuery 변경 시 300ms 후 API 호출
+  useEffect(() => {
+    if (!isCustom) return;
+
+    if (searchQuery.length < 2) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    setIsSearching(true);
+    const timer = setTimeout(async () => {
+      const results = await searchStocks(searchQuery);
+      setSearchResults(results);
+      setIsSearching(false);
+      setShowDropdown(results.length > 0);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, isCustom]);
+
+  // 드롭다운 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSelectStock = (result: StockSearchResult) => {
+    // 선택한 종목의 symbol을 customSymbol에 저장하고 검색 텍스트는 name으로 표시
+    setCustomSymbol(result.symbol);
+    setSearchQuery(result.name);
+    setShowDropdown(false);
+  };
+
+  const handleSearchQueryChange = (value: string) => {
+    setSearchQuery(value);
+    // 검색어가 바뀌면 이전에 선택한 symbol 초기화 (직접 입력 허용)
+    setCustomSymbol("");
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // customSymbol이 비어있으면 searchQuery를 심볼로 사용 (직접 입력 허용)
     const symbol = isCustom
-      ? customSymbol.trim()
+      ? (customSymbol || searchQuery.trim())
       : STOCK_PRESETS[selectedPresetIndex].symbol;
 
     if (!symbol) {
@@ -82,7 +141,7 @@ export default function SimulationForm({
     <form
       onSubmit={handleSubmit}
       className="w-full max-w-lg mx-auto p-6 rounded-2xl"
-      style={{ backgroundColor: "#16213e" }}
+      style={{ backgroundColor: "#1e2a48" }}
     >
       {/* 종목 선택 */}
       <div className="mb-6">
@@ -118,21 +177,73 @@ export default function SimulationForm({
           ))}
         </div>
 
-        {/* 직접 입력 필드 */}
+        {/* 검색 인풋 + 드롭다운 */}
         {isCustom && (
-          <input
-            type="text"
-            value={customSymbol}
-            onChange={(e) => setCustomSymbol(e.target.value)}
-            placeholder="종목 코드 입력 (예: 035720.KS)"
-            required
-            className="mt-3 w-full px-4 py-2 rounded-lg text-sm outline-none"
-            style={{
-              backgroundColor: "#0f3460",
-              color: "#ffffff",
-              border: "1px solid #d4af37",
-            }}
-          />
+          <div ref={dropdownRef} className="mt-3 relative">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => handleSearchQueryChange(e.target.value)}
+              placeholder="종목명 또는 코드 입력 (예: 삼성, AAPL)"
+              className="w-full px-4 py-2 rounded-lg text-sm outline-none"
+              style={{
+                backgroundColor: "#0f3460",
+                color: "#ffffff",
+                border: "1px solid #d4af37",
+              }}
+            />
+
+            {/* 검색 중 표시 */}
+            {isSearching && (
+              <p className="mt-1 text-xs" style={{ color: "#888" }}>
+                검색 중...
+              </p>
+            )}
+
+            {/* 검색 결과 드롭다운 */}
+            {showDropdown && (
+              <ul
+                style={{
+                  position: "absolute",
+                  zIndex: 10,
+                  top: "100%",
+                  left: 0,
+                  right: 0,
+                  backgroundColor: "#0f3460",
+                  border: "1px solid #d4af37",
+                  borderRadius: "8px",
+                  marginTop: "4px",
+                  maxHeight: "240px",
+                  overflowY: "auto",
+                  listStyle: "none",
+                  padding: 0,
+                  margin: "4px 0 0 0",
+                }}
+              >
+                {searchResults.slice(0, 8).map((result) => (
+                  <li
+                    key={result.symbol}
+                    onClick={() => handleSelectStock(result)}
+                    style={{
+                      padding: "10px 16px",
+                      cursor: "pointer",
+                      color: "#ffffff",
+                      fontSize: "14px",
+                      borderBottom: "1px solid #1a3a6e",
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLLIElement).style.backgroundColor = "#1a3a6e";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLLIElement).style.backgroundColor = "transparent";
+                    }}
+                  >
+                    {result.name} ({result.symbol}, {result.exchange})
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         )}
       </div>
 
